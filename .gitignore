@@ -1,0 +1,21 @@
+# Virtual environment
+.venv/
+
+# Packaging / build artifacts
+*.egg-info/
+build/
+dist/
+psmall.spec
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# OS cruft
+.DS_Store
+
+# /agents
+.claude
+
+# The original notebook lives in its own repo (bdongo/image_compression_notebook)
+image_compression_notebook/

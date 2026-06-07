@@ -1,0 +1,21 @@
+[project]
+name = "psmall"
+version = "0.1.0"
+description = "Interactive HEIC photo compression for your album folders"
+requires-python = ">=3.9"
+dependencies = [
+    "questionary>=2.0",
+    "Pillow>=10.0",
+    "pillow-heif>=0.13",
+    "tqdm>=4.66",
+]
+
+[project.scripts]
+psmall = "psmall.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["psmall"]
