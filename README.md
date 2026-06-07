@@ -1,10 +1,8 @@
 # psmall
 
 Interactive terminal tool for compressing photo albums to mobile-friendly HEIC.
-Wraps the original compression notebook in an arrow-key menu so you can pick
-albums, batch-process everything, and skip work that's already done.
-
-## What it does
+Pick albums from an arrow-key menu, batch-process everything, and skip work
+that's already done.
 
 - **Compresses images** (`.jpg`, `.jpeg`, `.png`) to HEIC at quality 80,
   resized so the long edge is at most 2048px. EXIF metadata is preserved
@@ -16,52 +14,25 @@ albums, batch-process everything, and skip work that's already done.
 
 ## Install
 
-Only Python 3.9 was available on this machine, so the project lives in an
-isolated virtual environment:
+Download the standalone binary — **no Python required**. macOS, Apple Silicon
+(arm64).
 
 ```bash
-cd /Users/brandon/Documents/image_compression
-python3 -m venv .venv          # if not already created
-.venv/bin/pip install -e .
+curl -L -o psmall https://github.com/bdongo/psmall/releases/latest/download/psmall
+chmod +x psmall
+xattr -d com.apple.quarantine psmall   # clear Gatekeeper (first run only)
+./psmall
 ```
 
-## Usage
+To run it from anywhere, move it onto your PATH:
 
 ```bash
-.venv/bin/psmall
+mv psmall /usr/local/bin/
 ```
 
-Or activate the environment first to use `psmall` as a bare command:
+Latest release: https://github.com/bdongo/psmall/releases/latest
 
-```bash
-source .venv/bin/activate
-psmall
-```
-
-## Standalone binary (no Python required)
-
-To produce a single self-contained executable that runs on a Mac with no
-Python, pip, or venv installed:
-
-```bash
-./build.sh          # needs PyInstaller (in .venv) and upx (brew install upx)
-```
-
-This writes `dist/psmall` — a ~13MB binary with Python, Pillow, and `libheif`
-all bundled in (compressed with UPX). Copy it anywhere on the target machine:
-
-```bash
-cp dist/psmall /usr/local/bin/psmall    # now `psmall` works globally
-```
-
-Notes:
-- The binary is **Apple Silicon (arm64)**; build separately on an Intel Mac
-  for that architecture.
-- First launch on another machine may hit macOS Gatekeeper
-  (*"unidentified developer"*). Clear it once with:
-  ```bash
-  xattr -d com.apple.quarantine /path/to/psmall
-  ```
+## Using psmall
 
 ### First run
 
@@ -97,7 +68,7 @@ Select an album to compress:
 - **Exit** — quit. After any compression run, psmall re-scans and returns to
   this menu, so a just-finished album shows `✓ done`.
 
-## Config
+### Config
 
 Settings persist to `~/.config/psmall/config.json`:
 
@@ -109,8 +80,57 @@ Settings persist to `~/.config/psmall/config.json`:
 
 Delete this file to reset to first-run behavior.
 
-## Compression settings
+---
 
-Quality (80) and long edge (2048px) are fixed in `psmall/compressor.py`
-(`QUALITY`, `LONG_EDGE`) for this version. Source formats handled are listed
-in `VALID_EXT`.
+## Development
+
+Requires Python 3.9+. Set up an isolated environment and install editable:
+
+```bash
+git clone git@github.com:bdongo/psmall.git
+cd psmall
+python3 -m venv .venv
+.venv/bin/pip install -e .
+```
+
+Run from the venv:
+
+```bash
+.venv/bin/psmall          # or: source .venv/bin/activate && psmall
+```
+
+### Layout
+
+| File | Responsibility |
+|---|---|
+| `psmall/cli.py` | entry point + main loop |
+| `psmall/config.py` | persisted home directory (`~/.config/psmall/config.json`) |
+| `psmall/scanner.py` | album discovery + done/pending status |
+| `psmall/compressor.py` | HEIC engine (resize, EXIF, encode) — UI-agnostic |
+| `psmall/menu.py` | questionary arrow-key prompts |
+
+Compression parameters are fixed in `psmall/compressor.py`: quality (`QUALITY`,
+80), long edge (`LONG_EDGE`, 2048px), and accepted source formats (`VALID_EXT`).
+
+### Building the binary
+
+```bash
+brew install upx                  # one-time
+.venv/bin/pip install pyinstaller # one-time
+./build.sh                        # -> dist/psmall (~14MB, UPX-compressed)
+```
+
+`build.sh` bundles Python, Pillow, and `libheif` into one self-contained file.
+The result is **Apple Silicon (arm64)** — build separately on an Intel Mac for
+that architecture.
+
+### Cutting a release
+
+```bash
+git add -A && git commit -m "..." && git push
+./build.sh
+gh release create vX.Y.Z dist/psmall --title "psmall vX.Y.Z" --notes "..."
+```
+
+The binary attaches to the release as a downloadable asset; the source repo
+never stores it (`dist/` is gitignored).
