@@ -11,6 +11,8 @@ that's already done.
   folder named `compressed_<album>` next to the source.
 - **Tracks what's done.** An album counts as *done* once its
   `compressed_<album>` folder exists and isn't empty.
+- **Only lists real albums.** Subfolders with no compressible images (empty
+  folders, docs-only folders) are skipped, not shown.
 
 ## Install
 

@@ -44,10 +44,14 @@ def scan(home: str) -> list[Album]:
         if name.startswith(COMPRESSED_PREFIX):
             continue  # this is an artifact folder, not a source album
 
+        count = _count_images(path)
+        if count == 0:
+            continue  # no compressible images here — not an album
+
         output_path = os.path.join(home, f"{COMPRESSED_PREFIX}{name}")
         status = Status.DONE if _is_done(output_path) else Status.PENDING
         albums.append(Album(name=name, path=path, status=status,
-                            output_path=output_path, count=_count_images(path)))
+                            output_path=output_path, count=count))
 
     return albums
 
