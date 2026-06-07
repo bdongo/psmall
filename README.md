@@ -32,6 +32,11 @@ mv psmall /usr/local/bin/
 
 Latest release: https://github.com/bdongo/psmall/releases/latest
 
+Check your installed version with `psmall --version`, and compare it against
+the latest release above. To update, re-run the `curl` command — it overwrites
+your copy with the newest binary (re-run the `xattr` line too, since
+re-downloaded files are re-quarantined).
+
 ## Using psmall
 
 ### First run

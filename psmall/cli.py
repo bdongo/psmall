@@ -7,11 +7,12 @@ re-scan so just-finished albums show as done. Only Exit leaves the loop.
 
 from __future__ import annotations
 
+import argparse
 import sys
 
 from tqdm import tqdm
 
-from . import config, menu
+from . import __version__, config, menu
 from .compressor import compress_album
 from .scanner import Album, Status, scan
 
@@ -73,6 +74,17 @@ def _handle_settings() -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="psmall",
+        description="Interactive HEIC photo compression for your album folders.",
+    )
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=f"psmall {__version__}",
+    )
+    parser.parse_args()
+
     home = _ensure_home()
     if home is None:
         print("No home directory set. Exiting.")
