@@ -126,11 +126,16 @@ that architecture.
 
 ### Cutting a release
 
+One command bumps the version, commits + pushes, rebuilds the binary, and
+publishes a GitHub release with it attached:
+
 ```bash
-git add -A && git commit -m "..." && git push
-./build.sh
-gh release create vX.Y.Z dist/psmall --title "psmall vX.Y.Z" --notes "..."
+./release.sh 0.2.0 "Add quality setting to the menu"
 ```
+
+The message is optional (defaults to `Release v0.2.0`) and is used for both the
+commit and the release notes. The script syncs the version in `pyproject.toml`
+and `psmall/__init__.py`, and refuses to reuse an existing version.
 
 The binary attaches to the release as a downloadable asset; the source repo
 never stores it (`dist/` is gitignored).
