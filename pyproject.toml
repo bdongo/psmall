@@ -1,6 +1,6 @@
 [project]
 name = "psmall"
-version = "0.2.0"
+version = "0.3.0"
 description = "Interactive HEIC photo compression for your album folders"
 requires-python = ">=3.9"
 dependencies = [
