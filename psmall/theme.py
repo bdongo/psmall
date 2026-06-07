@@ -19,6 +19,7 @@ CYAN = "\033[36m"
 GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
+MAGENTA = "\033[35m"
 
 
 def paint(text: str, *codes: str) -> str:
@@ -40,6 +41,7 @@ STYLE = questionary.Style([
     # custom classes used inside Choice titles
     ("done", "fg:ansigreen bold"),
     ("pending", "fg:ansiyellow bold"),
+    ("new", "fg:ansimagenta bold"),
     ("action", "fg:ansicyan bold"),
     ("dim", "fg:ansibrightblack"),
 ])

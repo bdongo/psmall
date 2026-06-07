@@ -40,27 +40,40 @@ def _image_files(input_dir: str) -> list[str]:
     ]
 
 
+def _output_path_for(album: Album, filename: str) -> str:
+    """The output .heic path a given source image maps to."""
+    base_name = os.path.splitext(filename)[0]
+    return os.path.join(album.output_path, f"{COMPRESSED_PREFIX}{base_name}.heic")
+
+
 def compress_album(album: Album,
                    long_edge: int = LONG_EDGE,
-                   quality: int = QUALITY) -> Iterator[Progress]:
-    """Compress every image in `album`, yielding Progress after each file.
+                   quality: int = QUALITY,
+                   skip_existing: bool = True) -> Iterator[Progress]:
+    """Compress images in `album`, yielding Progress after each file.
 
     Creates the output folder if needed. Originals are never touched. A file
     that fails to convert (e.g. corrupt) is skipped and counted in
     Progress.failed rather than aborting the whole album.
+
+    When `skip_existing` is True (default), source images whose output already
+    exists are skipped — so a re-run only compresses new photos. Pass False to
+    force a full re-compress that overwrites everything.
     """
     os.makedirs(album.output_path, exist_ok=True)
 
-    files = _image_files(album.path)
-    total = len(files)
+    # Build the work list first so `total` reflects only what we'll actually do.
+    work = [
+        (f, _output_path_for(album, f))
+        for f in _image_files(album.path)
+        if not (skip_existing and os.path.exists(_output_path_for(album, f)))
+    ]
+    total = len(work)
     failed = 0
     last_error = ""
 
-    for i, filename in enumerate(files, start=1):
+    for i, (filename, output_path) in enumerate(work, start=1):
         input_path = os.path.join(album.path, filename)
-        base_name = os.path.splitext(filename)[0]
-        output_filename = f"{COMPRESSED_PREFIX}{base_name}.heic"
-        output_path = os.path.join(album.output_path, output_filename)
 
         try:
             with Image.open(input_path) as img:

@@ -15,19 +15,27 @@ from tqdm import tqdm
 from . import __version__, config, menu
 from .compressor import compress_album
 from .scanner import Album, Status, scan
-from .theme import CYAN, DIM, GREEN, RED, YELLOW, paint
+from .theme import CYAN, DIM, GREEN, MAGENTA, RED, YELLOW, paint
 
 
 def _print_header(home: str, albums: list[Album]) -> None:
     """Print the colored context banner shown above the menu each loop."""
     total = len(albums)
+    pending = sum(1 for a in albums if a.status is Status.PENDING)
+    new = sum(1 for a in albums if a.status is Status.NEW_PENDING)
     done = sum(1 for a in albums if a.status is Status.DONE)
-    pending = total - done
+
+    parts = [paint(f"{total} albums", DIM)]
+    if pending:
+        parts.append(paint(f"{pending} pending", YELLOW))
+    if new:
+        parts.append(paint(f"{new} new", MAGENTA))
+    if done:
+        parts.append(paint(f"{done} done", GREEN))
+
     print()
     print(f"  {paint('psmall', CYAN)}  {paint('· ' + home, DIM)}")
-    print(f"  {paint(f'{total} albums', DIM)}   "
-          f"{paint(f'{pending} pending', YELLOW)}   "
-          f"{paint(f'{done} done', GREEN)}")
+    print("  " + "   ".join(parts))
 
 
 def _ensure_home() -> str | None:
@@ -44,17 +52,21 @@ def _ensure_home() -> str | None:
     return chosen
 
 
-def _run_one(album: Album) -> None:
-    """Compress a single album with a progress bar."""
+def _run_one(album: Album, skip_existing: bool = True) -> None:
+    """Compress a single album with a progress bar.
+
+    With skip_existing=True (default) only new photos are compressed; pass
+    False to force a full re-compress that overwrites existing output.
+    """
     print(f"\n{paint('Compressing', CYAN)} {album.name} "
           f"{paint('→ ' + album.output_path, DIM)}")
     bar = None
     last = None
-    for progress in compress_album(album):
+    for progress in compress_album(album, skip_existing=skip_existing):
         last = progress
         if bar is None:
             if progress.total == 0:
-                print(f"  {paint('(no images found)', DIM)}")
+                print(f"  {paint('Nothing to do — already up to date.', DIM)}")
                 return
             bar = tqdm(total=progress.total, unit="img", leave=True, colour="green")
         bar.update(1)
@@ -72,20 +84,20 @@ def _run_one(album: Album) -> None:
 
 
 def _run_all_pending(albums: list[Album]) -> None:
-    """Compress every pending album, noting those skipped because they're done."""
-    pending = [a for a in albums if a.status is Status.PENDING]
+    """Compress pending + new albums; skip (and note) those already done."""
+    todo = [a for a in albums if a.status is not Status.DONE]
     done = [a for a in albums if a.status is Status.DONE]
 
     for album in done:
         print(f"  {paint('↷ skipped', DIM)} {paint(album.name + ' (done)', DIM)}")
 
-    if not pending:
-        print(f"\n{paint('Nothing pending', YELLOW)} — all albums are already compressed.")
+    if not todo:
+        print(f"\n{paint('Nothing to do', YELLOW)} — all albums are already compressed.")
         return
-    print(f"\n{paint('Compressing', CYAN)} {len(pending)} pending album(s)...")
-    for album in pending:
-        _run_one(album)
-    print(f"\n{paint(f'✓ All done — {len(pending)} album(s) compressed.', GREEN)}")
+    print(f"\n{paint('Compressing', CYAN)} {len(todo)} album(s)...")
+    for album in todo:
+        _run_one(album)  # skip_existing=True: new photos only for NEW_PENDING
+    print(f"\n{paint(f'✓ All done — {len(todo)} album(s) compressed.', GREEN)}")
 
 
 def _handle_settings() -> None:
@@ -139,7 +151,14 @@ def main() -> None:
         else:
             # action is an album path
             album = next((a for a in albums if a.path == action), None)
-            if album is not None:
+            if album is None:
+                continue
+            if album.status is Status.DONE:
+                # Already done — confirm before overwriting everything.
+                if menu.confirm_recompress(album):
+                    _run_one(album, skip_existing=False)
+            else:
+                # PENDING compresses all; NEW_PENDING compresses only new photos.
                 _run_one(album)
 
 

@@ -20,27 +20,31 @@ EXIT = "exit"
 
 
 def _album_label(album: Album):
-    """Colored, column-aligned title: green ✓ done / yellow ● pending."""
+    """Colored, column-aligned title with status marker and photo count."""
     photos = "1 photo" if album.count == 1 else f"{album.count} photos"
-    count = ("class:dim", f"  ({photos})")
     if album.status is Status.DONE:
-        return [("class:done", "  ✓ done    "), ("", album.name), count]
-    return [("class:pending", "  ● pending "), ("", album.name), count]
+        return [("class:done", "  ✓ done    "), ("", album.name),
+                ("class:dim", f"  ({photos})")]
+    if album.status is Status.NEW_PENDING:
+        return [("class:new", "  ✚ new     "), ("", album.name),
+                ("class:dim", f"  ({photos}, {album.new_count} new)")]
+    return [("class:pending", "  ● pending "), ("", album.name),
+            ("class:dim", f"  ({photos})")]
 
 
 def main_menu(albums: list[Album]) -> str:
     """Show the main menu. Returns ALL | SETTINGS | EXIT | an album path."""
-    pending = sum(1 for a in albums if a.status is Status.PENDING)
+    todo = sum(1 for a in albums if a.status is not Status.DONE)
 
     choices = [
         questionary.Choice(
             title=[
                 ("class:action", "▶ Compress all "),
                 ("class:dim", "(skip done)  "),
-                ("class:pending", f"{pending} pending"),
+                ("class:pending", f"{todo} to do"),
             ],
             value=ALL,
-            disabled=None if pending else "nothing pending",
+            disabled=None if todo else "nothing to do",
         ),
         questionary.Separator(),
     ]
@@ -57,6 +61,17 @@ def main_menu(albums: list[Album]) -> str:
                                 choices=choices, style=STYLE).ask()
     # ask() returns None on Ctrl-C / Esc — treat as exit.
     return answer if answer is not None else EXIT
+
+
+def confirm_recompress(album: Album) -> bool:
+    """Ask before re-compressing an already-done album (overwrites output)."""
+    answer = questionary.confirm(
+        f"'{album.name}' is already done. Re-compress and overwrite "
+        f"all {album.count} photos?",
+        default=False,
+        style=STYLE,
+    ).ask()
+    return bool(answer)
 
 
 def settings_menu() -> str:
