@@ -14,17 +14,19 @@ that's already done.
 
 ## Install
 
-Download the standalone binary — **no Python required**. macOS, Apple Silicon
-(arm64).
+Standalone app — **no Python required**. macOS, Apple Silicon (arm64).
 
-Download the binary, clear the macOS Gatekeeper quarantine, and install it onto
-your PATH so `psmall` works from anywhere:
+Download and unzip the app, clear the macOS Gatekeeper quarantine, install the
+folder under `/usr/local`, and symlink it onto your PATH so `psmall` works from
+anywhere:
 
 ```bash
-curl -L -o /tmp/psmall https://github.com/bdongo/psmall/releases/latest/download/psmall
-chmod +x /tmp/psmall
-xattr -d com.apple.quarantine /tmp/psmall
-sudo mv /tmp/psmall /usr/local/bin/psmall
+curl -L -o /tmp/psmall.zip https://github.com/bdongo/psmall/releases/latest/download/psmall-macos-arm64.zip
+unzip -o /tmp/psmall.zip -d /tmp
+xattr -dr com.apple.quarantine /tmp/psmall
+sudo rm -rf /usr/local/psmall
+sudo mv /tmp/psmall /usr/local/psmall
+sudo ln -sf /usr/local/psmall/psmall /usr/local/bin/psmall
 ```
 
 Then run it:
@@ -33,16 +35,22 @@ Then run it:
 psmall
 ```
 
-These commands use absolute paths on purpose — run them from any directory.
-(`sudo` is only needed for the final `mv`, because `/usr/local/bin` is
-root-owned. The `xattr` step is a one-time Gatekeeper clear for unsigned
-binaries.)
+Notes:
+- The app ships as a **folder** (the executable needs its bundled libraries
+  beside it), so it installs to `/usr/local/psmall/` with a symlink at
+  `/usr/local/bin/psmall`. Don't move the executable out of its folder on its
+  own.
+- These commands use absolute paths — run them from any directory.
+- `sudo` is only needed for the `/usr/local` steps. `xattr -dr` clears the
+  Gatekeeper quarantine for the unsigned app.
+- **First launch is slow (a few seconds)** while macOS verifies the bundled
+  libraries; every launch after that is instant.
 
 Latest release: https://github.com/bdongo/psmall/releases/latest
 
 Check your installed version with `psmall --version` and compare it against the
-latest release above. To update, re-run the same four commands — they overwrite
-your copy with the newest binary.
+latest release above. To update, re-run the same commands — they replace your
+install with the newest version.
 
 ## Using psmall
 
@@ -129,17 +137,24 @@ Compression parameters are fixed in `psmall/compressor.py`: quality (`QUALITY`,
 ```bash
 brew install upx                  # one-time
 .venv/bin/pip install pyinstaller # one-time
-./build.sh                        # -> dist/psmall (~14MB, UPX-compressed)
+./build.sh                        # -> dist/psmall/ + dist/psmall-macos-arm64.zip
 ```
 
-`build.sh` bundles Python, Pillow, and `libheif` into one self-contained file.
-The result is **Apple Silicon (arm64)** — build separately on an Intel Mac for
-that architecture.
+`build.sh` bundles Python, Pillow, and `libheif` into a self-contained app.
+It uses PyInstaller `--onedir` (a folder), not `--onefile`: a onefile binary
+re-extracts to a temp dir on every launch, which makes macOS re-verify every
+bundled library and adds several seconds to *each* startup. onedir keeps the
+libraries at a stable path, so that cost is paid once and later launches start
+in ~0.1s. The folder is zipped to `dist/psmall-macos-arm64.zip` for release
+upload. The result is **Apple Silicon (arm64)** — build separately on an Intel
+Mac for that architecture.
+
+Run the built app with `./dist/psmall/psmall`.
 
 ### Cutting a release
 
-One command bumps the version, commits + pushes, rebuilds the binary, and
-publishes a GitHub release with it attached:
+One command bumps the version, commits + pushes, rebuilds the app, and
+publishes a GitHub release with the zip attached:
 
 ```bash
 ./release.sh 0.2.0 "Add quality setting to the menu"
@@ -149,5 +164,5 @@ The message is optional (defaults to `Release v0.2.0`) and is used for both the
 commit and the release notes. The script syncs the version in `pyproject.toml`
 and `psmall/__init__.py`, and refuses to reuse an existing version.
 
-The binary attaches to the release as a downloadable asset; the source repo
-never stores it (`dist/` is gitignored).
+The `psmall-macos-arm64.zip` attaches to the release as a downloadable asset;
+the source repo never stores it (`dist/` is gitignored).

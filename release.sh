@@ -57,7 +57,7 @@ git push origin main
 ./build.sh
 
 # --- 4. publish the release ---------------------------------------------
-gh release create "$VERSION" dist/psmall \
+gh release create "$VERSION" dist/psmall-macos-arm64.zip \
   --title "psmall $VERSION" \
   --notes "$MESSAGE"
 
