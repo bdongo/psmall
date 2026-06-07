@@ -42,9 +42,9 @@ holds your album subfolders. It's saved so you only set it once.
 ```
 ~/Documents/pictures/          <- home directory
 ├── 2025 SF July/              <- album (source)
-├── 2024 Tokyo/                <- album (source)
+├── 2024 Korea/                <- album (source)
 ├── compressed_2025 SF July/   <- output (created by psmall)
-└── compressed_2024 Tokyo/     <- output (created by psmall)
+└── compressed_2024 Korea/     <- output (created by psmall)
 ```
 
 ### Main menu
@@ -54,7 +54,7 @@ Select an album to compress:
   Compress all (skip done) — 1 pending
   ──────────────
   [• pending] 2025 SF July
-  [✓ done   ] 2024 Tokyo
+  [✓ done   ] 2024 Korea
   ──────────────
   ⚙  Settings
   Exit
