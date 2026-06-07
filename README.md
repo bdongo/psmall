@@ -69,24 +69,33 @@ holds your album subfolders. It's saved so you only set it once.
 
 ### Main menu
 
+A colored header shows where you are and what's left, then the album list —
+**pending in yellow, done in green** — each with its photo count:
+
 ```
-Select an album to compress:
-  Compress all (skip done) — 1 pending
-  ──────────────
-  [• pending] 2025 SF July
-  [✓ done   ] 2024 Korea
-  ──────────────
-  ⚙  Settings
-  Exit
+  psmall  · ~/Documents/pictures
+  2 albums   1 pending   1 done
+
+? Select an album to compress:
+ » ▶ Compress all (skip done)  1 pending
+   ──────────────
+   ● pending  2025 SF July  (72 photos)
+   ✓ done     2024 Korea    (58 photos)
+   ──────────────
+   ⚙  Settings
+   ✕ Exit
 ```
 
-- **Compress all (skip done)** — processes every pending album, skipping any
-  already compressed. Disabled when nothing is pending.
+- **Compress all (skip done)** — processes every pending album, printing a dim
+  `↷ skipped` line for each already-done album. Disabled when nothing is pending.
 - **An album** — compresses just that one (re-running a done album re-creates
   any missing files).
 - **Settings → Change home directory** — point psmall at a different folder.
 - **Exit** — quit. After any compression run, psmall re-scans and returns to
   this menu, so a just-finished album shows `✓ done`.
+
+A corrupt or unreadable image is skipped (reported in red) rather than aborting
+the album; the rest still compress.
 
 ### Config
 

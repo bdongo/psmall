@@ -15,6 +15,19 @@ from tqdm import tqdm
 from . import __version__, config, menu
 from .compressor import compress_album
 from .scanner import Album, Status, scan
+from .theme import CYAN, DIM, GREEN, RED, YELLOW, paint
+
+
+def _print_header(home: str, albums: list[Album]) -> None:
+    """Print the colored context banner shown above the menu each loop."""
+    total = len(albums)
+    done = sum(1 for a in albums if a.status is Status.DONE)
+    pending = total - done
+    print()
+    print(f"  {paint('psmall', CYAN)}  {paint('· ' + home, DIM)}")
+    print(f"  {paint(f'{total} albums', DIM)}   "
+          f"{paint(f'{pending} pending', YELLOW)}   "
+          f"{paint(f'{done} done', GREEN)}")
 
 
 def _ensure_home() -> str | None:
@@ -33,30 +46,46 @@ def _ensure_home() -> str | None:
 
 def _run_one(album: Album) -> None:
     """Compress a single album with a progress bar."""
-    print(f"\nCompressing '{album.name}' → {album.output_path}")
+    print(f"\n{paint('Compressing', CYAN)} {album.name} "
+          f"{paint('→ ' + album.output_path, DIM)}")
     bar = None
+    last = None
     for progress in compress_album(album):
+        last = progress
         if bar is None:
             if progress.total == 0:
-                print("  (no images found)")
+                print(f"  {paint('(no images found)', DIM)}")
                 return
-            bar = tqdm(total=progress.total, unit="img", leave=True)
+            bar = tqdm(total=progress.total, unit="img", leave=True, colour="green")
         bar.update(1)
     if bar is not None:
         bar.close()
-    print(f"  Done — originals untouched in {album.path}")
+
+    if last and last.failed:
+        ok = last.total - last.failed
+        print(f"  {paint(f'✓ {ok} compressed', GREEN)}, "
+              f"{paint(f'✗ {last.failed} failed', RED)} "
+              f"{paint('— ' + last.last_error, DIM)}")
+    else:
+        print(f"  {paint('✓ Done', GREEN)} "
+              f"{paint('— originals untouched in ' + album.path, DIM)}")
 
 
 def _run_all_pending(albums: list[Album]) -> None:
-    """Compress every pending album, skipping those already done."""
+    """Compress every pending album, noting those skipped because they're done."""
     pending = [a for a in albums if a.status is Status.PENDING]
+    done = [a for a in albums if a.status is Status.DONE]
+
+    for album in done:
+        print(f"  {paint('↷ skipped', DIM)} {paint(album.name + ' (done)', DIM)}")
+
     if not pending:
-        print("Nothing pending — all albums are already compressed.")
+        print(f"\n{paint('Nothing pending', YELLOW)} — all albums are already compressed.")
         return
-    print(f"\nCompressing {len(pending)} pending album(s)...")
+    print(f"\n{paint('Compressing', CYAN)} {len(pending)} pending album(s)...")
     for album in pending:
         _run_one(album)
-    print(f"\nAll done — {len(pending)} album(s) compressed.")
+    print(f"\n{paint(f'✓ All done — {len(pending)} album(s) compressed.', GREEN)}")
 
 
 def _handle_settings() -> None:
@@ -92,9 +121,10 @@ def main() -> None:
 
     while True:
         albums = scan(home)
+        _print_header(home, albums)
         if not albums:
-            print(f"No albums found under {home}. Add some folders, or change "
-                  f"the home directory in Settings.")
+            print(f"  {paint('No albums found here.', YELLOW)} Add some folders, "
+                  f"or change the home directory in Settings.")
 
         action = menu.main_menu(albums)
 

@@ -11,6 +11,7 @@ import os
 import questionary
 
 from .scanner import Album, Status
+from .theme import STYLE
 
 # Sentinel action tokens returned by main_menu (besides an album path).
 ALL = "all"
@@ -18,9 +19,13 @@ SETTINGS = "settings"
 EXIT = "exit"
 
 
-def _album_label(album: Album) -> str:
-    marker = "✓ done   " if album.status is Status.DONE else "• pending"
-    return f"[{marker}] {album.name}"
+def _album_label(album: Album):
+    """Colored, column-aligned title: green ✓ done / yellow ● pending."""
+    photos = "1 photo" if album.count == 1 else f"{album.count} photos"
+    count = ("class:dim", f"  ({photos})")
+    if album.status is Status.DONE:
+        return [("class:done", "  ✓ done    "), ("", album.name), count]
+    return [("class:pending", "  ● pending "), ("", album.name), count]
 
 
 def main_menu(albums: list[Album]) -> str:
@@ -29,7 +34,11 @@ def main_menu(albums: list[Album]) -> str:
 
     choices = [
         questionary.Choice(
-            title=f"Compress all (skip done) — {pending} pending",
+            title=[
+                ("class:action", "▶ Compress all "),
+                ("class:dim", "(skip done)  "),
+                ("class:pending", f"{pending} pending"),
+            ],
             value=ALL,
             disabled=None if pending else "nothing pending",
         ),
@@ -40,12 +49,12 @@ def main_menu(albums: list[Album]) -> str:
                                           value=album.path))
     choices += [
         questionary.Separator(),
-        questionary.Choice(title="⚙  Settings", value=SETTINGS),
-        questionary.Choice(title="Exit", value=EXIT),
+        questionary.Choice(title=[("class:action", "⚙  Settings")], value=SETTINGS),
+        questionary.Choice(title=[("class:dim", "✕ Exit")], value=EXIT),
     ]
 
     answer = questionary.select("Select an album to compress:",
-                                choices=choices).ask()
+                                choices=choices, style=STYLE).ask()
     # ask() returns None on Ctrl-C / Esc — treat as exit.
     return answer if answer is not None else EXIT
 
@@ -56,8 +65,9 @@ def settings_menu() -> str:
         "Settings:",
         choices=[
             questionary.Choice(title="Change home directory", value="change_home"),
-            questionary.Choice(title="← Back", value="back"),
+            questionary.Choice(title=[("class:dim", "← Back")], value="back"),
         ],
+        style=STYLE,
     ).ask()
     return answer if answer is not None else "back"
 
@@ -76,6 +86,7 @@ def prompt_home_dir(current: str | None = None) -> str | None:
         default=current or "",
         validate=validate,
         only_directories=True,
+        style=STYLE,
     ).ask()
     if answer is None:
         return None

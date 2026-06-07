@@ -13,6 +13,10 @@ from enum import Enum
 
 COMPRESSED_PREFIX = "compressed_"
 
+# Source formats psmall compresses. Lives here (not the compressor) so both the
+# scanner's photo count and the compressor agree, without a circular import.
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
+
 
 class Status(str, Enum):
     PENDING = "pending"
@@ -25,6 +29,7 @@ class Album:
     path: str          # absolute source directory
     status: Status
     output_path: str   # absolute "<home>/compressed_<name>"
+    count: int         # number of compressible source images
 
 
 def scan(home: str) -> list[Album]:
@@ -42,7 +47,7 @@ def scan(home: str) -> list[Album]:
         output_path = os.path.join(home, f"{COMPRESSED_PREFIX}{name}")
         status = Status.DONE if _is_done(output_path) else Status.PENDING
         albums.append(Album(name=name, path=path, status=status,
-                            output_path=output_path))
+                            output_path=output_path, count=_count_images(path)))
 
     return albums
 
@@ -50,3 +55,9 @@ def scan(home: str) -> list[Album]:
 def _is_done(output_path: str) -> bool:
     """True if the output folder exists and contains at least one file."""
     return os.path.isdir(output_path) and len(os.listdir(output_path)) > 0
+
+
+def _count_images(path: str) -> int:
+    """Number of compressible source images directly in `path`."""
+    return sum(1 for f in os.listdir(path)
+               if f.lower().endswith(IMAGE_EXTENSIONS))
