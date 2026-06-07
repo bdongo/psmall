@@ -17,25 +17,32 @@ that's already done.
 Download the standalone binary — **no Python required**. macOS, Apple Silicon
 (arm64).
 
-```bash
-curl -L -o psmall https://github.com/bdongo/psmall/releases/latest/download/psmall
-chmod +x psmall
-xattr -d com.apple.quarantine psmall   # clear Gatekeeper (first run only)
-./psmall
-```
-
-To run it from anywhere, move it onto your PATH:
+Download the binary, clear the macOS Gatekeeper quarantine, and install it onto
+your PATH so `psmall` works from anywhere:
 
 ```bash
-mv psmall /usr/local/bin/
+curl -L -o /tmp/psmall https://github.com/bdongo/psmall/releases/latest/download/psmall
+chmod +x /tmp/psmall
+xattr -d com.apple.quarantine /tmp/psmall
+sudo mv /tmp/psmall /usr/local/bin/psmall
 ```
+
+Then run it:
+
+```bash
+psmall
+```
+
+These commands use absolute paths on purpose — run them from any directory.
+(`sudo` is only needed for the final `mv`, because `/usr/local/bin` is
+root-owned. The `xattr` step is a one-time Gatekeeper clear for unsigned
+binaries.)
 
 Latest release: https://github.com/bdongo/psmall/releases/latest
 
-Check your installed version with `psmall --version`, and compare it against
-the latest release above. To update, re-run the `curl` command — it overwrites
-your copy with the newest binary (re-run the `xattr` line too, since
-re-downloaded files are re-quarantined).
+Check your installed version with `psmall --version` and compare it against the
+latest release above. To update, re-run the same four commands — they overwrite
+your copy with the newest binary.
 
 ## Using psmall
 
