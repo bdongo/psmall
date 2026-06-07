@@ -83,7 +83,7 @@ each with its photo count:
    ──────────────
    ● pending  2025 SF July  (72 photos)
    ✚ new      2024 Korea    (58 photos, 6 new)
-   ✓ done     2023 Japan    (140 photos)
+   ✓ done     2023 NYC    (140 photos)
    ──────────────
    ⚙  Settings
    ✕ Exit
